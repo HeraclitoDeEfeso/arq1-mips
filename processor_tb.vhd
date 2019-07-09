@@ -105,7 +105,7 @@ begin
 
 	Instruction_Mem_inst : memory
 	generic map (
-	   C_ELF_FILENAME     => "Program1",
+	   C_ELF_FILENAME     => "programa",
       C_MEM_SIZE         => 1024
    )
 	port map (
