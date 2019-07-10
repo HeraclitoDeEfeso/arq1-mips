@@ -55,13 +55,13 @@ begin
 				readline (bin_file, current_line);					
 				--hread(current_line, address);
 				hread(current_line, datum);
-				assert CONV_INTEGER(address(30 downto 0))<C_MEM_SIZE 
+				assert CONV_INTEGER(address(9 downto 0))<C_MEM_SIZE 
 					report "Direccion fuera de rango en el fichero de la memoria"
 					severity failure;
-				memo(CONV_INTEGER(address(30 downto 0))) <= datum(31 downto 24);
-				memo(CONV_INTEGER(address(30 downto 0)+'1')) <= datum(23 downto 16);
-				memo(CONV_INTEGER(address(30 downto 0)+"10")) <= datum(15 downto 8);
-				memo(CONV_INTEGER(address(30 downto 0)+"11")) <= datum(7 downto 0);
+				memo(CONV_INTEGER(address(9 downto 0))) <= datum(31 downto 24);
+				memo(CONV_INTEGER(address(9 downto 0))+1) <= datum(23 downto 16);
+				memo(CONV_INTEGER(address(9 downto 0))+2) <= datum(15 downto 8);
+				memo(CONV_INTEGER(address(9 downto 0))+3) <= datum(7 downto 0);
 				address := address + 4;
    		end loop;
 		
@@ -73,16 +73,16 @@ begin
 	
 	elsif (Clk'event and Clk = '0') then
          if (WrStb = '1') then
-			memo(CONV_INTEGER(Addr(31 downto 0))) <= DataIn(31 downto 24);
-			memo(CONV_INTEGER(Addr(31 downto 0))+1) <= DataIn(23 downto 16);
-			memo(CONV_INTEGER(Addr(31 downto 0))+2) <= DataIn(15 downto 8);
-			memo(CONV_INTEGER(Addr(31 downto 0))+3) <= DataIn(7 downto 0);
+			memo(CONV_INTEGER(Addr(9 downto 0))) <= DataIn(31 downto 24);
+			memo(CONV_INTEGER(Addr(9 downto 0))+1) <= DataIn(23 downto 16);
+			memo(CONV_INTEGER(Addr(9 downto 0))+2) <= DataIn(15 downto 8);
+			memo(CONV_INTEGER(Addr(9 downto 0))+3) <= DataIn(7 downto 0);
 			
          elsif (RdStb = '1')then
-			aux(31 downto 24) <= memo(conv_integer(Addr(31 downto 0)));   
-			aux(23 downto 16) <= memo(conv_integer(Addr(31 downto 0))+1);
-			aux(15 downto 8) <= memo(conv_integer(Addr(31 downto 0))+2);
-			aux(7 downto 0) <= memo(conv_integer(Addr(31 downto 0))+3);
+			aux(31 downto 24) <= memo(conv_integer(Addr(9 downto 0)));   
+			aux(23 downto 16) <= memo(conv_integer(Addr(9 downto 0))+1);
+			aux(15 downto 8) <= memo(conv_integer(Addr(9 downto 0))+2);
+			aux(7 downto 0) <= memo(conv_integer(Addr(9 downto 0))+3);
          end if;
    end if;
 	
