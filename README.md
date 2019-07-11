@@ -6,36 +6,67 @@
 
 #### Universidad Nacional de Tres de Febrero 
 
+## Drive del Informe
+
+https://drive.google.com/drive/folders/1waicHrNDdCIElkje7xlGZl1lWKSU62F0?usp=sharing
+
 ## TOC del Informe 
 
  1. Enunciado
+ 
     Unificar parte 1 y 2
  2. Introducción
+
     Tipos de instrucciones MIPS. Instrucciones tipo I.
+    
     Riesgos de Datos. Forwarding.
+    
     Riesgos de Control. Jump.
- 2. Recursos
+    
+ 3. Recursos
+ 
     Instalación del entorno de desarrollo.
+    
     Configuración del entorno de desarrollo.
+    
     Copia del repositorio.
+    
     Guía para la simulación.
+    
  3. Diseño de la implementación
- 3.a. Extensión para instrucciones I.
-      Elaborar datapath. Descripción.
- 3.b. Extensión para instruccion Jump.
-      Elaborar datapath. Descripción.
- 3.c. Extensión con Forwarding Unit.
-      Elaborar datapath. Descripción.
+    1. Extensión para instrucciones I.
+
+       Elaborar datapath. Descripción.
+    2. Extensión para instrucción LUI.
+
+       Elaborar datapath. Descripción.
+    3. Extensión para instruccion Jump.
+
+       Elaborar datapath. Descripción.
+    4. Extensión con Forwarding Unit.
+
+       Elaborar datapath. Descripción.
+
  4. Análisis de la implementación 
- 4.a. Extensión para instrucciones I.
-      Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
- 4.b. Extensión para instruccion Jump.
-      Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
- 4.c. Extensión con Forwarding Unit.
-      Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
+    1. Extensión para instrucciones I.
+
+       Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
+    1. Extensión para instruccion LUI.
+
+       Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
+    3. Extensión para instruccion Jump.
+
+       Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
+    4. Extensión para Forwarding.
+
+       Fragmento de simulación con instrucciones del programa y señales relevantes. Descripción.
+
  5. Conclusiones 
+
  6. Referencias
+ 
     Bibliografía en diapositivas.
+ 
     Páginas de las aplicaciones.
 
 Boceto para recursos:
