@@ -17,7 +17,7 @@ entity unidad_forwarding is
 				
 				--Salidas
 				anticipar_a : out STD_LOGIC_VECTOR(1 downto 0);--Selector MUX A 
-				anticipar_b : out STD_LOGIC_VECTOR(1 downto 0);--Selector MUX B 
+				anticipar_b : out STD_LOGIC_VECTOR(1 downto 0)--Selector MUX B 
 			  );
 end unidad_forwarding;
 
