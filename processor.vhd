@@ -32,6 +32,20 @@ component ALU
            
 end component;
 
+component unidad_forwarding 
+    Port ( 		--Entradas
+				id_ex_rs : in  STD_LOGIC_VECTOR(4 downto 0);--MUX A "00"
+				id_ex_rt : in  STD_LOGIC_VECTOR(4 downto 0);--MUX B "00"
+				ex_mem_regWrite : in  STD_LOGIC;
+				ex_mem_rd : in  STD_LOGIC_VECTOR(4 downto 0);--MUX A/B "10"
+				mem_wb_regWrite : in  STD_LOGIC;
+				mem_wb_rd : in  STD_LOGIC_VECTOR(4 downto 0);--MUX A/B "01"
+				--Salidas
+				anticipar_a : out STD_LOGIC_VECTOR(1 downto 0);--Selector MUX A 
+				anticipar_b : out STD_LOGIC_VECTOR(1 downto 0));--Selector MUX B 
+end component;			  
+			  
+
 component registers 
     port  (clk : in STD_LOGIC;
            reset : in STD_LOGIC;
@@ -66,6 +80,7 @@ signal ID_ALUSrc: std_logic;
 signal ID_immediate: std_logic_vector (31 downto 0);
 signal ID_rt: std_logic_vector (4 downto 0);
 signal ID_rd: std_logic_vector (4 downto 0);
+signal ID_rs: std_logic_vector (4 downto 0);
 signal ID_PC_4: std_logic_vector (31 downto 0);
 signal ID_Instruction: std_logic_vector (31 downto 0);
 
@@ -83,6 +98,7 @@ signal EX_data2_rd: std_logic_vector (31 downto 0);
 signal ALUResult: std_logic_vector (31 downto 0);
 signal zero: std_logic;
 signal EX_immediate: std_logic_vector (31 downto 0);
+signal EX_rs: std_logic_vector (4 downto 0);
 signal EX_rt: std_logic_vector (4 downto 0);
 signal EX_rd: std_logic_vector (4 downto 0);
 signal ALU_B_In: std_logic_vector (31 downto 0);
@@ -90,6 +106,11 @@ signal EX_Instruction_RegDst: std_logic_vector (4 downto 0);
 signal EX_PC_4: std_logic_vector (31 downto 0);
 signal EX_PC_Branch: std_logic_vector (31 downto 0);
 signal ALUControl: std_logic_vector (2 downto 0);
+signal selector_A: std_logic_vector(1 downto 0);
+signal selector_B: std_logic_vector(1 downto 0);
+signal MUXA_out: std_logic_vector (31 downto 0);
+signal MUXB_out: std_logic_vector (31 downto 0);
+
       
       --ETAPA MEM--
 signal MEM_PC_Branch: std_logic_vector (31 downto 0);
@@ -102,7 +123,7 @@ signal MEM_Instruction_RegDst: std_logic_vector (4 downto 0);
 signal MEM_MemRead: std_logic;
 signal MEM_MemWrite: std_logic;
 signal MEM_data2_rd: std_logic_vector (31 downto 0);
-
+signal MEM_rd: std_logic_vector (4 downto 0);
      
       --ETAPA WB--
 signal WB_reg_wr: std_logic_vector (4 downto 0);
@@ -111,6 +132,7 @@ signal MemToReg: std_logic;
 signal RegWrite: std_logic;
 signal WB_AluResult: std_logic_vector (31 downto 0);
 signal WB_MemData: std_logic_vector (31 downto 0);
+signal WB_rd: std_logic_vector (4 downto 0);
        
         
 begin 	
@@ -225,9 +247,9 @@ Registers_inst:  registers
   end process;
   
   ID_immediate <= (x"FFFF"&ID_Instruction(15 downto 0)) when ID_Instruction(15) = '1' else (x"0000"&ID_Instruction(15 downto 0));
+  Id_rs <= ID_instruction(25 downto 21);
   ID_rt <= ID_Instruction(20 downto 16);
   ID_rd <= ID_Instruction(15 downto 11);
-    
 
 ---------------------------------------------------------------------------------------------------------------
 -- REGISTRO DE SEGMENTACION ID/EX
@@ -246,6 +268,7 @@ ID_EX: process(clk, reset)
       ALUOp <= (others =>'0');
       ALUSrc <= '0' ;
       EX_immediate <= (others => '0');
+      EX_rs <= (others => '0');
       EX_rt <= (others => '0');
       EX_rd <= (others => '0');
     elsif( rising_edge (clk)) then
@@ -260,6 +283,7 @@ ID_EX: process(clk, reset)
       ALUOp <= ID_AluOp;
       ALUSrc <= ID_ALUSrc;
       EX_immediate <= ID_immediate;
+      EX_rs <= ID_rs;
       EX_rt <= ID_rt;
       EX_rd <= ID_rd;
       EX_PC_4 <= ID_PC_4;
@@ -272,12 +296,25 @@ end process;
 -- Instanciacion de ALU
 ALU_inst: alu 
 	port map(
-		a => EX_data1_rd, 
+		a => MUXA_out, 
 		b => ALU_B_In, 
       control => AluControl,
       zero => zero, 
 		result => ALUResult);
-
+		
+-- Instanciacion de Unidad de Forwarding
+unidad_forwarding_inst: unidad_forwarding
+				
+	port map(
+		id_ex_rs => EX_rs,
+		id_ex_rt =>EX_rt,
+		ex_mem_regWrite => MEM_regWrite,
+		ex_mem_rd =>MEM_rd,
+		mem_wb_regWrite => RegWrite,
+		mem_wb_rd => WB_rd,
+		anticipar_a => selector_A,
+		anticipar_b => selector_B);
+		
 -- Unidad de Control de ALU
 controlAlu : process( EX_immediate, AluOp)
 begin 
@@ -305,8 +342,34 @@ begin
    end case;
 end process;
 
+-- MUX B
+MUXB : process( selector_b, EX_data2_rd,WB_data_wr,MEM_AluResult)
+begin 
+	case selector_b is
+		when "01" => 
+			MUXB_out <= WB_data_wr;
+		when "10" => 
+			MUXB_out <= MEM_AluResult;
+		when Others => 
+			MUXB_out <= EX_data2_rd;
+		end case;
+end process;
+
+-- MUX A
+MUXA : process( selector_a, EX_data1_rd,WB_data_wr,MEM_AluResult)
+begin 
+	case selector_a is
+		when "01" => 
+			MUXA_out <= WB_data_wr;
+		when "10" => 
+			MUXA_out <= MEM_AluResult;
+		when Others => 
+			MUXA_out <= EX_data1_rd;
+		end case;
+end process;
+
 -- MUX ALUSrc
-ALU_B_In <= EX_data2_rd when ALUSrc = '0' else EX_immediate; 
+ALU_B_In <= MUXB_out when ALUSrc = '0' else EX_immediate; 
 
 -- MUX RegDst
 EX_Instruction_RegDst <= EX_rt when RegDst  = '0' else EX_rd; 
@@ -340,6 +403,7 @@ EX_MEM: process(clk, reset)
       MEM_AluResult <= ALUResult;
       MEM_data2_rd <= EX_data2_rd;
       MEM_Instruction_RegDst <= EX_Instruction_RegDst;
+      MEM_rd <= EX_rd;
 		MEM_PC_Branch <= EX_PC_Branch; 
     end if;
 end process;
@@ -372,6 +436,7 @@ EX_MEM_ETAPA: process(clk, reset)
 		 WB_MemData <= D_DataIn;
 		 WB_AluResult <= MEM_AluResult; 
 		 WB_reg_wr <= MEM_Instruction_RegDst;
+		 WB_rd <= MEM_rd;
     end if;
 end process;
 
