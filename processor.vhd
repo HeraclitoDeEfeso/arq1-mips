@@ -59,7 +59,7 @@ component registers
            
 end component;
 
---DECLARACION DE SEÑALES--
+--DECLARACION DE SEï¿½ALES--
       --ETAPA IF--
 signal PC: std_logic_vector (31 downto 0);
 signal PC_4: std_logic_vector (31 downto 0);
@@ -75,7 +75,7 @@ signal ID_MemRead: std_logic;
 signal ID_MemWrite: std_logic;
 signal ID_Branch: std_logic;
 signal ID_RegDst: std_logic;
-signal ID_AluOp: std_logic_vector(1 downto 0);
+signal ID_AluOp: std_logic_vector(2 downto 0);
 signal ID_ALUSrc: std_logic;
 signal ID_immediate: std_logic_vector (31 downto 0);
 signal ID_rt: std_logic_vector (4 downto 0);
@@ -91,7 +91,7 @@ signal EX_MemRead: std_logic;
 signal EX_MemWrite: std_logic;
 signal EX_Branch: std_logic;
 signal RegDst: std_logic;
-signal ALUOp: std_logic_vector(1 downto 0);
+signal ALUOp: std_logic_vector(2 downto 0);
 signal ALUSrc: std_logic;
 signal EX_data1_rd: std_logic_vector (31 downto 0);
 signal EX_data2_rd: std_logic_vector (31 downto 0);
@@ -202,7 +202,7 @@ Registers_inst:  registers
 				ID_MemWrite<= '0'; 
 				ID_Branch<= '0'; 
 				ID_RegDst<= '1'; 
-				ID_AluOp<= "10"; 
+				ID_AluOp<= "010"; 
 				ID_ALUSrc<= '0';
       --LW--
       when "100011" => 
@@ -212,7 +212,7 @@ Registers_inst:  registers
 				ID_MemWrite<= '0'; 
 				ID_Branch<= '0'; 
 				ID_RegDst<= '0'; 
-				ID_AluOp<= "00"; 
+				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '1';
       --SW--
       when "101011" => 
@@ -222,7 +222,7 @@ Registers_inst:  registers
 				ID_MemWrite<= '1'; 
 				ID_Branch<= '0'; 
 				ID_RegDst<= '0'; 
-				ID_AluOp<= "00"; 
+				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '1';
       --BEQ--
       when "000100" => 
@@ -232,8 +232,38 @@ Registers_inst:  registers
 				ID_MemWrite<= '0'; 
 				ID_Branch<= '1'; 
 				ID_RegDst<= '0'; 
-				ID_AluOp<= "01"; 
+				ID_AluOp<= "001"; 
 				ID_ALUSrc<= '0';
+      --ADDI--
+      when "001000" => 
+				ID_RegWrite<= '1'; 
+				ID_MemToReg<= '0'; 
+				ID_MemRead<= '0'; 
+				ID_MemWrite<= '0'; 
+				ID_Branch<= '0'; 
+				ID_RegDst<= '0'; 
+				ID_AluOp<= "000"; 
+				ID_ALUSrc<= '1';
+      --ANDI--
+      when "001100" => 
+				ID_RegWrite<= '1'; 
+				ID_MemToReg<= '0'; 
+				ID_MemRead<= '0'; 
+				ID_MemWrite<= '0'; 
+				ID_Branch<= '0'; 
+				ID_RegDst<= '0'; 
+				ID_AluOp<= "100"; 
+				ID_ALUSrc<= '1';
+      --ORI--
+      when "001101" => 
+				ID_RegWrite<= '1'; 
+				ID_MemToReg<= '0'; 
+				ID_MemRead<= '0'; 
+				ID_MemWrite<= '0'; 
+				ID_Branch<= '0'; 
+				ID_RegDst<= '0'; 
+				ID_AluOp<= "101"; 
+				ID_ALUSrc<= '1';
       when others => 
 				ID_RegWrite<= '0'; 
 				ID_MemToReg<= '0'; 
@@ -241,7 +271,7 @@ Registers_inst:  registers
 				ID_MemWrite<= '0'; 
 				ID_Branch<= '0'; 
 				ID_RegDst<= '0'; 
-				ID_AluOp<= "00"; 
+				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '0';
     end case;
   end process;
@@ -319,11 +349,11 @@ unidad_forwarding_inst: unidad_forwarding
 controlAlu : process( EX_immediate, AluOp)
 begin 
    case (AluOp) is 
-      when "00" =>
+      when "000" =>
          AluControl <= "010"; -- Load and Store
-      when "01" =>
+      when "001" =>
          AluControl <= "110"; -- BEQ
-      when "10" => -- R Type
+      when "010" => -- R Type
          if EX_immediate(5 downto 0) = "100000" then
             AluControl <= "010"; -- ADD
          elsif EX_immediate(5 downto 0) = "100010" then
@@ -337,6 +367,10 @@ begin
          else 
             AluControl <= "000";
          end if;
+      when "100" =>
+         AluControl <= "000"; -- ANDI
+      when "101" =>
+         AluControl <= "110"; -- ORI
       when others => 
          AluControl <= "000";
    end case;
@@ -374,7 +408,7 @@ ALU_B_In <= MUXB_out when ALUSrc = '0' else EX_immediate;
 -- MUX RegDst
 EX_Instruction_RegDst <= EX_rt when RegDst  = '0' else EX_rd; 
   
--- Calculo de dirección de salto
+-- Calculo de direcciï¿½n de salto
 EX_PC_Branch <= (EX_PC_4)+(EX_immediate(29 downto 0)&"00");
 
 ---------------------------------------------------------------------------------------------------------------
