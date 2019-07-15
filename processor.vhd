@@ -370,7 +370,7 @@ begin
       when "100" =>
          AluControl <= "000"; -- ANDI
       when "101" =>
-         AluControl <= "110"; -- ORI
+         AluControl <= "001"; -- ORI
       when others => 
          AluControl <= "000";
    end case;
