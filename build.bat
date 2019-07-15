@@ -6,6 +6,3 @@ ghdl --clean
 ghdl -a --ieee=synopsys -fexplicit alu.vhd memory.vhd processor.vhd processor_tb.vhd registers.vhd unidad_forwarding.vhd
 ghdl -e --ieee=synopsys -fexplicit processor_tb
 ghdl -r --ieee=synopsys -fexplicit processor_tb --assert-level=none --ieee-asserts=disable-at-0 --stop-time=1ms --vcd=processor_tb.vcd
-ghdl -a --ieee=synopsys -fexplicit alu.vhd memory.vhd processor.vhd riesgodatos_tb.vhd registers.vhd unidad_forwarding.vhd
-ghdl -e --ieee=synopsys -fexplicit riesgodatos_tb
-ghdl -r --ieee=synopsys -fexplicit riesgodatos_tb --assert-level=none --ieee-asserts=disable-at-0 --stop-time=1ms --vcd=riesgodatos_tb.vcd
