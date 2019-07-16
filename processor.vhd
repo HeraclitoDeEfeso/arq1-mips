@@ -115,7 +115,7 @@ signal MUXA_out: std_logic_vector (31 downto 0);
 signal MUXB_out: std_logic_vector (31 downto 0);
 signal EX_JUMP_ADDR: std_logic_vector (27 downto 0);
 signal EX_JUMP: std_logic;
-signal JUMP_VALUE: std_logic_vector (31 downto 0);
+signal EX_JUMP_VALUE: std_logic_vector (31 downto 0);
 
       
       --ETAPA MEM--
@@ -130,6 +130,8 @@ signal MEM_MemRead: std_logic;
 signal MEM_MemWrite: std_logic;
 signal MEM_data2_rd: std_logic_vector (31 downto 0);
 signal MEM_rd: std_logic_vector (4 downto 0);
+signal MEM_JUMP: std_logic;
+signal MEM_JUMP_VALUE: std_logic_vector (31 downto 0);
      
       --ETAPA WB--
 signal WB_reg_wr: std_logic_vector (4 downto 0);
@@ -157,7 +159,7 @@ begin
 
   PC_4 <= PC + 4;
   MUX_PCSRC <= PC_4 when (PcSrc = '0') else MEM_PC_Branch;
-  next_PC <= MUX_PCSRC when (EX_JUMP = '0') else JUMP_VALUE;
+  next_PC <= MUX_PCSRC when (MEM_JUMP = '0') else MEM_JUMP_VALUE;
 	
 -- Interfaz con memoria de Instrucciones
   I_Addr <= PC;
@@ -456,7 +458,7 @@ EX_Instruction_RegDst <= EX_rt when RegDst  = '0' else EX_rd;
 EX_PC_Branch <= (EX_PC_4)+(EX_immediate(29 downto 0)&"00");
 
 --Formacion direccion de salto concatencando PC & JUMP_ADDR
-JUMP_VALUE <=EX_PC_4(31 downto 28)&EX_JUMP_ADDR;
+EX_JUMP_VALUE <=EX_PC_4(31 downto 28)&EX_JUMP_ADDR;
 
 ---------------------------------------------------------------------------------------------------------------
 -- REGISTRO DE SEGMENTACION EX/MEM
@@ -473,7 +475,9 @@ EX_MEM: process(clk, reset)
       MEM_AluResult <= (others => '0');
       MEM_data2_rd <= (others => '0');
       MEM_Instruction_RegDst <= (others => '0');
-		MEM_PC_Branch <= (others => '0');
+	  MEM_PC_Branch <= (others => '0');
+	  MEM_JUMP <= '0';
+	  MEM_JUMP_VALUE <= (others => '0');
 	elsif( rising_edge (clk)) then
       MEM_RegWrite <= EX_RegWrite;
       MEM_MemToReg <= EX_MemToReg;
@@ -485,7 +489,9 @@ EX_MEM: process(clk, reset)
       MEM_data2_rd <= EX_data2_rd;
       MEM_Instruction_RegDst <= EX_Instruction_RegDst;
       MEM_rd <= EX_rd;
-		MEM_PC_Branch <= EX_PC_Branch; 
+	  MEM_PC_Branch <= EX_PC_Branch;
+	  MEM_JUMP <= EX_JUMP;
+	  MEM_JUMP_VALUE <= EX_JUMP_VALUE; 
     end if;
 end process;
 
