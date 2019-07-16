@@ -65,6 +65,7 @@ signal PC: std_logic_vector (31 downto 0);
 signal PC_4: std_logic_vector (31 downto 0);
 signal PCSRC: std_logic;
 signal next_PC: std_logic_vector (31 downto 0);
+signal MUX_PCSRC: std_logic_vector (31 downto 0);
 
       --ETAPA ID--
 signal ID_data1_rd: std_logic_vector (31 downto 0);
@@ -83,6 +84,8 @@ signal ID_rd: std_logic_vector (4 downto 0);
 signal ID_rs: std_logic_vector (4 downto 0);
 signal ID_PC_4: std_logic_vector (31 downto 0);
 signal ID_Instruction: std_logic_vector (31 downto 0);
+signal ID_JUMP_ADDR: std_logic_vector (25 downto 0);
+signal ID_JUMP: std_logic;
 
       --ETAPA EX--
 signal EX_RegWrite: std_logic;
@@ -110,6 +113,9 @@ signal selector_A: std_logic_vector(1 downto 0);
 signal selector_B: std_logic_vector(1 downto 0);
 signal MUXA_out: std_logic_vector (31 downto 0);
 signal MUXB_out: std_logic_vector (31 downto 0);
+signal EX_JUMP_ADDR: std_logic_vector (27 downto 0);
+signal EX_JUMP: std_logic;
+signal JUMP_VALUE: std_logic_vector (31 downto 0);
 
       
       --ETAPA MEM--
@@ -150,8 +156,8 @@ begin
   end process;
 
   PC_4 <= PC + 4;
-  next_PC <= PC_4 when (PcSrc = '0') else
-            MEM_PC_Branch;
+  MUX_PCSRC <= PC_4 when (PcSrc = '0') else MEM_PC_Branch;
+  next_PC <= MUX_PCSRC when (EX_JUMP = '0') else JUMP_VALUE;
 	
 -- Interfaz con memoria de Instrucciones
   I_Addr <= PC;
@@ -204,6 +210,7 @@ Registers_inst:  registers
 				ID_RegDst<= '1'; 
 				ID_AluOp<= "010"; 
 				ID_ALUSrc<= '0';
+				ID_JUMP<= '0';
       --LW--
       when "100011" => 
 				ID_RegWrite<= '1'; 
@@ -214,6 +221,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '1';
+				ID_JUMP<= '0';
       --SW--
       when "101011" => 
 				ID_RegWrite<= '0'; 
@@ -224,6 +232,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '1';
+				ID_JUMP<= '0';
       --BEQ--
       when "000100" => 
 				ID_RegWrite<= '0'; 
@@ -234,6 +243,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "001"; 
 				ID_ALUSrc<= '0';
+				ID_JUMP<= '0';
       --ADDI--
       when "001000" => 
 				ID_RegWrite<= '1'; 
@@ -244,6 +254,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '1';
+				ID_JUMP<= '0';
       --ANDI--
       when "001100" => 
 				ID_RegWrite<= '1'; 
@@ -254,6 +265,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "100"; 
 				ID_ALUSrc<= '1';
+				ID_JUMP<= '0';
       --ORI--
       when "001101" => 
 				ID_RegWrite<= '1'; 
@@ -264,6 +276,29 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "101"; 
 				ID_ALUSrc<= '1';
+				ID_JUMP<= '0';
+	--LUI--
+	when "001111" => 
+				ID_RegWrite<= '1'; 
+				ID_MemToReg<= '0'; 
+				ID_MemRead<= '0'; 
+				ID_MemWrite<= '0'; 
+				ID_Branch<= '0'; 
+				ID_RegDst<= '0'; --Reg RT--
+				ID_AluOp<= "011"; --Desplaza Inmediate a parte alta--
+				ID_ALUSrc<= '1';  --Selecciona Inmediato como operando
+				ID_JUMP<= '0';
+	--J Salto Incondicional--
+	when "000010" =>
+				ID_RegWrite<= '0'; 
+				ID_MemToReg<= '0'; 
+				ID_MemRead<= '0'; 
+				ID_MemWrite<= '0'; 
+				ID_Branch<= '0'; 
+				ID_RegDst<= '0'; 
+				ID_AluOp<= "000"; 
+				ID_ALUSrc<= '0';  
+				ID_JUMP<= '1';
       when others => 
 				ID_RegWrite<= '0'; 
 				ID_MemToReg<= '0'; 
@@ -273,6 +308,7 @@ Registers_inst:  registers
 				ID_RegDst<= '0'; 
 				ID_AluOp<= "000"; 
 				ID_ALUSrc<= '0';
+				ID_JUMP<= '0';
     end case;
   end process;
   
@@ -280,6 +316,7 @@ Registers_inst:  registers
   Id_rs <= ID_instruction(25 downto 21);
   ID_rt <= ID_Instruction(20 downto 16);
   ID_rd <= ID_Instruction(15 downto 11);
+  ID_JUMP_ADDR <= ID_Instruction(25 downto 0);
 
 ---------------------------------------------------------------------------------------------------------------
 -- REGISTRO DE SEGMENTACION ID/EX
@@ -301,6 +338,8 @@ ID_EX: process(clk, reset)
       EX_rs <= (others => '0');
       EX_rt <= (others => '0');
       EX_rd <= (others => '0');
+      EX_JUMP_ADDR <= (others => '0');
+      EX_JUMP <= '0' ;
     elsif( rising_edge (clk)) then
       EX_data1_rd <= ID_data1_rd;
       EX_data2_rd <= ID_data2_rd;
@@ -317,6 +356,9 @@ ID_EX: process(clk, reset)
       EX_rt <= ID_rt;
       EX_rd <= ID_rd;
       EX_PC_4 <= ID_PC_4;
+      EX_JUMP_ADDR <= ID_JUMP_ADDR&"00"; --Guardo directamente en el registro de segmentacion el salto desplazado--
+      EX_JUMP <= ID_JUMP;
+
     end if;
 end process;
  
@@ -371,6 +413,8 @@ begin
          AluControl <= "000"; -- ANDI
       when "101" =>
          AluControl <= "001"; -- ORI
+      when "011" =>
+         AluControl <= "100"; --LUI
       when others => 
          AluControl <= "000";
    end case;
@@ -410,6 +454,9 @@ EX_Instruction_RegDst <= EX_rt when RegDst  = '0' else EX_rd;
   
 -- Calculo de direcci�n de salto
 EX_PC_Branch <= (EX_PC_4)+(EX_immediate(29 downto 0)&"00");
+
+--Formacion direccion de salto concatencando PC & JUMP_ADDR
+JUMP_VALUE <=EX_PC_4(31 downto 28)&EX_JUMP_ADDR;
 
 ---------------------------------------------------------------------------------------------------------------
 -- REGISTRO DE SEGMENTACION EX/MEM
